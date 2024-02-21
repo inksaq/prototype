@@ -1,7 +1,15 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include "engine/includes/core/engine.h"
 #include "engine/includes/engine.hpp"
+#include "glm/fwd.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+
+Core::Engine::Engine engine;
+
 int main() {
     // Initialize GLFW
     if (!glfwInit()) {
@@ -20,6 +28,7 @@ int main() {
         glfwTerminate();
         return -1;
     }
+    engine.started = true;
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
@@ -41,29 +50,12 @@ int main() {
     ShaderManager shaderManager;
     auto defaultShaderProgram = shaderManager.loadShaderFromMemory(default_vert_shader, default_frag_shader, "default");
     // Define the vertex data for a triangle
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
+    RectVAO rectVao;
+    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-    GLuint VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    
-    // Bind Vertex Array Object
-    glBindVertexArray(VAO);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+            (float)width / (float)height, 0.1f, 100.0f);
 
-    // Copy vertices array in a buffer for OpenGL to use
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Set vertex attribute pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Unbind the VAO
-    glBindVertexArray(0);
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
@@ -73,10 +65,14 @@ int main() {
 
         // Use the shader program
         glUseProgram(defaultShaderProgram);
+        unsigned int viewLoc = glGetUniformLocation(defaultShaderProgram, "view");
+        unsigned int projLoc = glGetUniformLocation(defaultShaderProgram, "projection");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(camera.GetViewMatrix()));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Draw the triangle
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(rectVao.VBO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
         // Swap front and back buffers
@@ -85,10 +81,7 @@ int main() {
         // Poll for and process events
         glfwPollEvents();
     }
-
-    // Deallocate resources
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    rectVao.Delete();
 
     // Terminate GLFW
     glfwTerminate();

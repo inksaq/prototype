@@ -1,0 +1,9 @@
+prefix=C:/dev/headshot/prototype
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: fmt
+Description: dev-tut: fmt
+Version: 10.2.0
+Libs: -L${libdir} -lfmt
+Cflags: -I${includedir}
