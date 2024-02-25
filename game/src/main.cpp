@@ -1,11 +1,13 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <cstdio>
 #include <iostream>
 #include "engine/includes/core/engine.h"
 #include "engine/includes/engine.hpp"
 #include "glm/fwd.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 Core::Engine::Engine engine;
@@ -57,8 +59,12 @@ int main() {
             (float)width / (float)height, 0.1f, 100.0f);
 
 
+
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+        if (engine.started = true) {
+            std::cout << "Running" << std::endl;
+        }
         // Clear the colorbuffer
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -71,7 +77,7 @@ int main() {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Draw the triangle
-        glBindVertexArray(rectVao.VBO);
+        glBindVertexArray(rectVao.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 

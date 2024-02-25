@@ -1,18 +1,17 @@
 #version 330 core
 
-layout (location = 0) in vec3 aPos; // The position variable has attribute position 0
-layout (location = 1) in vec2 aTexCoord; // The texture coordinate variable has attribute position 1
+in vec2 TexCoord;
+out vec4 FragColor;
 
-out vec2 TexCoord; // Output texture coordinate to fragment shader
-
-uniform mat4 model; // Model matrix
-uniform mat4 view; // View matrix
-uniform mat4 projection; // Projection matrix
+uniform sampler2D texture1;
+uniform int useTexture; // 0 for color, 1 for texture
 
 void main()
 {
-    // Transform vertex positions from model space to clip space
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    // Pass through texture coordinates
-    TexCoord = aTexCoord;
+    if (useTexture == 1) {
+        FragColor = texture(texture1, TexCoord);
+    } else {
+        // Render with a solid color if no texture is used
+        FragColor = vec4(1.0, 0.5, 0.2, 1.0); // Example color: orange
+    }
 }
