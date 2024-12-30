@@ -1,6 +1,9 @@
 .cache/*
 build
 dist/*
+include/*
+lib/*
+out/*
 !subprojects/*.wrap
 !subprojects/packagefiles/
 subprojects/*

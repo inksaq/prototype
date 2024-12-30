@@ -27,7 +27,7 @@ namespace Core::Engine {
         if (!specification.workingDirectory.empty())
             std::filesystem::current_path(specification.workingDirectory);
 
-        std::log("test")// TODO ADD LOGGER
+        // std::log("test")// TODO ADD LOGGER
         window = std::unique_ptr<Window>(Window::create(createWindowSpecs()));
         window->init();
         window->setEventCallback([this](Event& event) { HandleEvent(event); });

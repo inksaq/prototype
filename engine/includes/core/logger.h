@@ -21,7 +21,7 @@ class Logger {
   public:
     enum class Level : uint8_t {
       Trace = 0, Debug, Info, Warn, Error
-    }
+    };
     static const char* LevelToString(Level level){
       switch (level) {
         case Level::Trace: return "Trace";
@@ -41,7 +41,7 @@ class Logger {
       static void init();
       static void terminate();
 
-      static void Log(Level level, const char* prefix ,const std::string& message);
+      static void Log(Level level, const char* prefix, const char* message);
       static void Log(Level level, const char* message);
       static std::vector<std::string> getLogs();
 
