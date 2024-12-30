@@ -40,4 +40,15 @@ public:
     }
 
     // Implement other functionalities like processKeyboard(), processMouseMovement(), etc.
+
+    void updateMouseMovement(float xoffset, float yoffset) {
+        xoffset *= MouseSensitivity;
+        yoffset *= MouseSensitivity;
+        Yaw += xoffset;
+        Pitch += yoffset;
+        if (Pitch > 89.0f)
+            Pitch = 89.0f;
+        if (Pitch < -89.0f)
+            Pitch = -89.0f;
+    }
 };

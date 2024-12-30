@@ -27,5 +27,5 @@ meson compile -C $BUILD_DIR
 meson install -C $BUILD_DIR
 
 # Generate compile_commands.json for clangd
-meson compile_commands -C $BUILD_DIR
+# meson compile_commands -C $BUILD_DIR
 

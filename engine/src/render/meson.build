@@ -1,6 +1,8 @@
 render_sources = files(
+  'buffer.cpp',
+  'context.cpp',
   'mesh.cpp',
-  'scene.cpp',
   'shader.cpp',
-  'vao.cpp'
+  'scene.cpp',
+  'texture.cpp'
   )

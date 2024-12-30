@@ -1,5 +1,5 @@
 project(
-  'dev-tut',
+  'prototype',
   'c',
   'cpp',
   default_options: [
@@ -15,14 +15,18 @@ host_system = host_machine.system()
 
 # Dependencies
 
-
+  # render
 glfw_dep = dependency('glfw3', required: true)
 gleq_dep = dependency('gleq', required: true)
 glew_dep = dependency('glew', required: true)
+  # math
 fmt_dep = dependency('fmt', required: true)
 glm_dep = dependency('glm', required: true)
-imgui_dep = dependency('imgui', required: true) 
+  # ui
+imgui_dep = dependency('imgui', required: true)
+clay_dep = dependency('clay', required: true)
 
+  #iops
 threads_dep = dependency('threads',   static : true)
 
 
@@ -36,6 +40,6 @@ else
 endif
 stb_dep = dependency('stb', required: true) 
 subdir('shaders')
-subdir('editor')
 subdir('engine')
+subdir('editor')
 subdir('game')

@@ -1,4 +1,6 @@
 core_sources = files(
+  'logger.cpp',
   'engine.cpp',
-  'window.cpp' 
+  'input.cpp',
+  'window.cpp'
   )

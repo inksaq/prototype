@@ -1,6 +1,6 @@
 cpp_args = []
 executable(
-    'Example',
+    'Game',
     dependencies: [engine_dep],
     include_directories : '.',
     sources: files('./main.cpp'),
