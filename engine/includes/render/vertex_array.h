@@ -9,22 +9,40 @@
 #include <memory>
 
 namespace Core::Render {
+    class IndexBuffer;
+    class VertexBuffer;
+
     class VertexArray {
     public:
-        virtual ~VertexArray() = default;
+        VertexArray();
+        ~VertexArray();
 
-        virtual uint32_t GetID() const = 0;
+        // Prevent copying
+        VertexArray(const VertexArray&) = delete;
+        VertexArray& operator=(const VertexArray&) = delete;
 
-        virtual void Bind() const = 0;
-        virtual void Unbind() const = 0;
+        // Allow moving
+        VertexArray(VertexArray&& other) noexcept;
+        VertexArray& operator=(VertexArray&& other) noexcept;
 
-        virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) = 0;
-        virtual void AddIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) = 0;
+        void bind() const;
+        void unbind() const;
 
-        virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const = 0;
-        virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const = 0;
+        // Add vertex buffer with layout
+        void addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer);
 
-        static std::shared_ptr<VertexArray> Create();
+        // Set index buffer
+        void setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer);
+
+        // Getters
+        const std::shared_ptr<IndexBuffer>& getIndexBuffer() const { return m_IndexBuffer; }
+        uint32_t getVertexArrayID() const { return m_RendererID; }
+
+    private:
+        uint32_t m_RendererID;
+        uint32_t m_VertexBufferIndex = 0;
+        std::shared_ptr<IndexBuffer> m_IndexBuffer;
+        std::shared_ptr<VertexBuffer> m_VertexBuffer;  // Add this line
     };
 }
 

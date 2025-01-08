@@ -4,6 +4,6 @@
 #include "scene.h"
 #include "shader.h"
 #include "buffer.h"
-// #include "vertex_array.h"
+#include "vertex_array.h"
 #include "texture.h"
 #include "camera.h"

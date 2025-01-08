@@ -90,8 +90,14 @@ void Shader::initialize(const char* vertexSource, const char* fragmentSource) {
     return programID;
 }
 
-void Shader::use() {
+    void Shader::use() {
     glUseProgram(ID);
+
+    // Verify uniform locations
+    GLint texLoc = glGetUniformLocation(ID, "texture1");
+    GLint useTexLoc = glGetUniformLocation(ID, "useTexture");
+    std::cout << "Texture uniform location: " << texLoc << std::endl;
+    std::cout << "UseTexture uniform location: " << useTexLoc << std::endl;
 }
 
 void Shader::dispose() {

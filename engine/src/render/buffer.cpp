@@ -1,127 +1,173 @@
-//
-// Created by Administrator on 12/29/2024.
-//
-
-#include <includes/render/buffer.h>
+#include <GL/glew.h>
 #include <iostream>
+#include <render/buffer.h>
 
 namespace Core::Render {
 
-Buffer::Buffer() : vao(0), vbo(0), ebo(0), vertexCount(0), indexCount(0) {
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glGenBuffers(1, &ebo);
-}
+    ////////////////////////////////////////////////////////////////////////////
+    // VertexBuffer /////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
-Buffer::~Buffer() {
-    cleanup();
-}
+    VertexBuffer::VertexBuffer(float* vertices, uint32_t size) {
+        glCreateBuffers(1, &m_RendererID);
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 
-Buffer::Buffer(Buffer&& other) noexcept
-    : vao(other.vao), vbo(other.vbo), ebo(other.ebo),
-      vertexCount(other.vertexCount), indexCount(other.indexCount) {
-    other.vao = other.vbo = other.ebo = 0;
-    other.vertexCount = other.indexCount = 0;
-}
-
-Buffer& Buffer::operator=(Buffer&& other) noexcept {
-    if (this != &other) {
-        cleanup();
-        vao = other.vao;
-        vbo = other.vbo;
-        ebo = other.ebo;
-        vertexCount = other.vertexCount;
-        indexCount = other.indexCount;
-        other.vao = other.vbo = other.ebo = 0;
-        other.vertexCount = other.indexCount = 0;
+        // Debug verification
+        float* debugData = new float[size/sizeof(float)];
+        glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
+        std::cout << "Vertex Buffer Data Verification:" << std::endl;
+        for(size_t i = 0; i < size/sizeof(float); i++) {
+            std::cout << "Vertex[" << i << "]: " << debugData[i];
+            if(i % 5 == 4) std::cout << " (end of vertex)";  // Since each vertex has 5 components
+            std::cout << std::endl;
+        }
+        delete[] debugData;
     }
-    return *this;
-}
 
-void Buffer::bind() const {
-    glBindVertexArray(vao);
-}
+    VertexBuffer::VertexBuffer(uint32_t size) {
+        glCreateBuffers(1, &m_RendererID);
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    }
 
-void Buffer::unbind() const {
-    glBindVertexArray(0);
-}
+    VertexBuffer::~VertexBuffer() {
+        glDeleteBuffers(1, &m_RendererID);
+    }
 
-void Buffer::setVertexData(const std::vector<Vertex>& vertices) {
-    bind();
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-    setupVertexAttributes();
-    vertexCount = vertices.size();
-}
+    VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept
+        : m_RendererID(other.m_RendererID), m_Layout(std::move(other.m_Layout)) {
+        other.m_RendererID = 0;
+    }
 
-void Buffer::setIndices(const std::vector<uint32_t>& indices) {
-    bind();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
-    indexCount = indices.size();
-}
+    VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept {
+        if (this != &other) {
+            glDeleteBuffers(1, &m_RendererID);
+            m_RendererID = other.m_RendererID;
+            m_Layout = std::move(other.m_Layout);
+            other.m_RendererID = 0;
+        }
+        return *this;
+    }
 
-void Buffer::setupVertexAttributes() {
-    // Position attribute (location = 0)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    void VertexBuffer::bind() const {
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+    }
 
-    // Texture coordinates attribute (location = 1)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
-}
+    void VertexBuffer::unbind() const {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
 
-void Buffer::draw() const {
-    bind();
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-}
+    void VertexBuffer::setData(const void* data, uint32_t size) {
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+        // Add debug check
+        float* debugData = new float[size/sizeof(float)];
+        glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
+        for(size_t i = 0; i < size/sizeof(float); i++) {
+            std::cout << "Vertex data[" << i << "]: " << debugData[i] << std::endl;
+        }
+        delete[] debugData;
+    }
 
-void Buffer::drawIndexed() const {
-    bind();
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-}
 
-void Buffer::cleanup() {
-    if (vao) glDeleteVertexArrays(1, &vao);
-    if (vbo) glDeleteBuffers(1, &vbo);
-    if (ebo) glDeleteBuffers(1, &ebo);
-    vao = vbo = ebo = 0;
-}
+    ////////////////////////////////////////////////////////////////////////////
+    // IndexBuffer //////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
-// Static create functions
-std::unique_ptr<Buffer> Buffer::createQuad() {
-    auto buffer = std::make_unique<Buffer>();
+    IndexBuffer::IndexBuffer(uint32_t* indices, uint32_t count)
+        : m_Count(count) {
+        glCreateBuffers(1, &m_RendererID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    }
 
-    std::vector<Vertex> vertices = {
-        // Vertices for a quad centered at origin
-        {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}}, // Top left
-        {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}}, // Bottom left
-        {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}}, // Bottom right
-        {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}}  // Top right
-    };
+    IndexBuffer::~IndexBuffer() {
+        glDeleteBuffers(1, &m_RendererID);
+    }
 
-    std::vector<uint32_t> indices = {
-        0, 1, 2,  // First triangle
-        0, 2, 3   // Second triangle
-    };
+    IndexBuffer::IndexBuffer(IndexBuffer&& other) noexcept
+        : m_RendererID(other.m_RendererID), m_Count(other.m_Count) {
+        other.m_RendererID = 0;
+        other.m_Count = 0;
+    }
 
-    buffer->setVertexData(vertices);
-    buffer->setIndices(indices);
+    IndexBuffer& IndexBuffer::operator=(IndexBuffer&& other) noexcept {
+        if (this != &other) {
+            glDeleteBuffers(1, &m_RendererID);
+            m_RendererID = other.m_RendererID;
+            m_Count = other.m_Count;
+            other.m_RendererID = 0;
+            other.m_Count = 0;
+        }
+        return *this;
+    }
 
-    return buffer;
-}
+    void IndexBuffer::bind() const {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+    }
 
-std::unique_ptr<Buffer> Buffer::createTriangle() {
-    auto buffer = std::make_unique<Buffer>();
+    void IndexBuffer::unbind() const {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 
-    std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}}, // Bottom left
-        {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}}, // Bottom right
-        {{ 0.0f,  0.5f, 0.0f}, {0.5f, 1.0f}}  // Top
-    };
+    ////////////////////////////////////////////////////////////////////////////
+    // Buffer /////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
-    buffer->setVertexData(vertices);
-    return buffer;
-}
+    std::shared_ptr<VertexArray> Buffer::createQuad() {
+        auto vertexArray = std::make_shared<VertexArray>();
+
+        // Vertex data with debug output
+        float vertices[] = {
+            // positions        // texture coords
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  // bottom left
+             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // bottom right
+             0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  // top right
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f   // top left
+        };
+
+        std::cout << "Creating quad with vertices:" << std::endl;
+        for(int i = 0; i < 4; i++) { // 4 vertices
+            std::cout << "Vertex " << i << ": "
+                      << "pos(" << vertices[i*5] << ", " << vertices[i*5+1] << ", " << vertices[i*5+2] << ") "
+                      << "tex(" << vertices[i*5+3] << ", " << vertices[i*5+4] << ")" << std::endl;
+        }
+
+        auto vertexBuffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+
+        // Set up layout with debug info
+        BufferLayout layout = {
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float2, "a_TexCoord" }
+        };
+
+        std::cout << "Buffer layout:" << std::endl;
+        std::cout << "Stride: " << layout.getStride() << " bytes" << std::endl;
+        for(const auto& element : layout) {
+            std::cout << "Attribute: " << element.name
+                      << " Offset: " << element.offset
+                      << " Size: " << element.size << std::endl;
+        }
+
+        vertexBuffer->setLayout(layout);
+        vertexArray->addVertexBuffer(vertexBuffer);
+
+        uint32_t indices[] = {
+            0, 1, 2,    // first triangle
+            2, 3, 0     // second triangle
+        };
+
+        std::cout << "Indices: ";
+        for(int i = 0; i < 6; i++) {
+            std::cout << indices[i] << " ";
+        }
+        std::cout << std::endl;
+
+        auto indexBuffer = std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(uint32_t));
+        vertexArray->setIndexBuffer(indexBuffer);
+
+        return vertexArray;
+    }
 
 } // namespace Core::Render

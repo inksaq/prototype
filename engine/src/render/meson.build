@@ -4,5 +4,6 @@ render_sources = files(
   'mesh.cpp',
   'shader.cpp',
   'scene.cpp',
-  'texture.cpp'
+  'texture.cpp',
+  'vertex_array.cpp'
   )

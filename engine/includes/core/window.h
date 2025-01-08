@@ -43,6 +43,11 @@ namespace Core::Engine {
         EventCallbackFunc eventCallback;
         bool vsyncEnabled;
 
+        bool callbacksInitialised = false;
+        bool hasEventCallback() const { return static_cast<bool>(eventCallback); }
+        bool areCallbacksInitialized() const { return callbacksInitialised; }
+
+
         void setupWindowHints();
         void setupCallbacks();
         bool createWindow();
@@ -61,6 +66,7 @@ namespace Core::Engine {
 
         void processEvents();
         void swapBuffers();
+        void initializeCallbacks();
 
         void maximise();
         void center();

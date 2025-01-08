@@ -39,8 +39,7 @@ namespace Backend {
 
      void OGLBackend::loadShaders() {
         // Example shader loading
-        shaders_.emplace(1, OGLAsse
-            tManager::getInstance().loadShader("path/to/vertex.glsl", "path/to/fragment.glsl"));
+        shaders_.emplace(1, OGLAssetManager::getInstance().loadShader("path/to/vertex.glsl", "path/to/fragment.glsl"));
         // Add more shaders as needed
     }
 

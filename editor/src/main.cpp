@@ -10,7 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-Core::Engine::Engine engine;
+
 
 int main() {
     // Initialize GLFW
@@ -22,7 +22,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    // Core::Engine::Engine engine;
     // Create a windowed mode window and its OpenGL context
     GLFWwindow* window = glfwCreateWindow(640, 480, "Hello Triangle", nullptr, nullptr);
     if (!window) {
@@ -30,7 +30,7 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    engine.started = true;
+    // engine.started = true;
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
@@ -52,7 +52,7 @@ int main() {
     ShaderManager shaderManager;
     auto defaultShaderProgram = shaderManager.loadShaderFromMemory(default_vert_shader, default_frag_shader, "default");
     // Define the vertex data for a triangle
-    RectVAO rectVao;
+    // RectVAO rectVao;
     Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
@@ -62,9 +62,9 @@ int main() {
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
-        if (engine.started = true) {
-            std::cout << "Running" << std::endl;
-        }
+        // if (engine.started = true) {
+        //     std::cout << "Running" << std::endl;
+        // }
         // Clear the colorbuffer
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -77,7 +77,7 @@ int main() {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Draw the triangle
-        glBindVertexArray(rectVao.VAO);
+        // glBindVertexArray(rectVao.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
@@ -87,7 +87,7 @@ int main() {
         // Poll for and process events
         glfwPollEvents();
     }
-    rectVao.Delete();
+    // rectVao.Delete();
 
     // Terminate GLFW
     glfwTerminate();

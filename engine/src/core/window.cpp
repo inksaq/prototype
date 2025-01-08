@@ -12,6 +12,14 @@
 
 #define ASSERT(...)
 
+#define DEBUG_EVENTS 0  // Set to 0 to disable event debugging
+
+#if DEBUG_EVENTS
+    #define EVENT_LOG(x) std::cout << "[Event] " << x << std::endl
+#else
+    #define EVENT_LOG(x)
+#endif
+
 namespace Core::Engine {
 
     // Window::Window(const WindowSpecs& specs)
@@ -47,7 +55,6 @@ namespace Core::Engine {
             return false;
         }
 
-        setupCallbacks();
         setupIcon();
 
         // Setup vsync
@@ -63,6 +70,142 @@ namespace Core::Engine {
         }
 
         return true;
+    }
+
+    void Window::initializeCallbacks() {
+        if (callbacksInitialised || !window) return;
+
+        glfwSetWindowUserPointer(window, this);
+
+        bool isRawMouseMotionSupported = glfwRawMouseMotionSupported();
+        if (isRawMouseMotionSupported) {
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
+
+
+        // Start with just the essential callbacks
+        glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            if (instance && instance->hasEventCallback()) {
+                WindowCloseEvent event;
+                instance->getEventCallback()(event);
+            }
+        });
+
+        glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int32_t width, int32_t height) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            if (instance && instance->hasEventCallback()) {
+                instance->specs.width = width;
+                instance->specs.height = height;
+                WindowResizeEvent event((uint32_t)width, (uint32_t)height);
+                instance->getEventCallback()(event);
+                EVENT_LOG("Window Resize event: " << width << "x" << height);
+            }
+        });
+
+        glfwSetWindowIconifyCallback(window, [](GLFWwindow* window, int32_t iconified) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            WindowMinimizeEvent event((bool) iconified);
+            instance->getEventCallback()(event);
+            EVENT_LOG("Window Iconify event triggered...");
+        });
+
+        glfwSetWindowMaximizeCallback(window, [](GLFWwindow* window, int32_t maximized) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            WindowMaximizeEvent event((bool) maximized);
+            instance->getEventCallback()(event);
+            EVENT_LOG("Window Maximise event triggered");
+        });
+
+        glfwSetWindowPosCallback(window, [](GLFWwindow* window, int32_t x, int32_t y) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            WindowMoveEvent event(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
+            instance->getEventCallback()(event);
+            EVENT_LOG("Window Move event triggered");
+
+        });
+
+        glfwSetWindowFocusCallback(window, [](GLFWwindow* window, int32_t focused) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            WindowFocusEvent event(static_cast<bool>(focused));
+            instance->getEventCallback()(event);
+            EVENT_LOG("Window Focus event triggered");
+        });
+
+        glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            KeyTypeEvent event((KeyCode) codepoint);
+            instance->getEventCallback()(event);
+            EVENT_LOG("Set Char event triggered");
+
+        });
+
+        glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            MouseMoveEvent event((float) x, (float) y);
+            EVENT_LOG("Cursor POS - X: " << x << " | Y:" << y);
+            instance->getEventCallback()(event);
+        });
+
+        glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            MouseScrollEvent event((float) xOffset, (float) yOffset);
+            EVENT_LOG("Scroll Offset - X: " << xOffset << " | Y:" << yOffset);
+
+            instance->getEventCallback()(event);
+        });
+
+        // KEYBOARD KEY CALLBACKS
+        glfwSetKeyCallback(window, [](GLFWwindow* window, int32_t key, int32_t scancode, int32_t action, int32_t mods) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            if (instance && instance->hasEventCallback()) {
+                switch (action) {
+                    case GLFW_PRESS: {
+                        KeyPressEvent event((KeyCode)key);
+                        instance->getEventCallback()(event);
+                        EVENT_LOG("Key Press Event Triggered: " << key);
+
+                        break;
+                    }
+                    case GLFW_RELEASE: {
+                        KeyReleaseEvent event((KeyCode)key);
+                        instance->getEventCallback()(event);
+                        // EVENT_LOG("Key Release Event Triggered: " + key);
+
+                        break;
+                    }
+                    case GLFW_REPEAT: {
+                       KeyHoldEvent event((KeyCode) key);
+                       instance->getEventCallback()(event);
+                        // EVENT_LOG("Key Repeat Event Triggered: " + key);
+
+                       break;
+                   }
+                }
+            }
+        });
+
+        // MOUSE BUTTON CALLBACKS
+        glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
+            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+            switch (action) {
+                case GLFW_PRESS: {
+                    EVENT_LOG("Mouse Press Event Triggered: " << button);
+                    MouseButtonPressEvent event((MouseButton) button);
+                    instance->getEventCallback()(event);
+                    break;
+                } case GLFW_RELEASE: {
+                    // EVENT_LOG("Mouse Release Event Triggered: " + button);
+                    MouseButtonReleaseEvent event((MouseButton) button);
+                    instance->getEventCallback()(event);
+
+                    break;
+                }
+            }
+        });
+
+        callbacksInitialised = true;
     }
 
     void Window::setupWindowHints() {
@@ -104,42 +247,42 @@ namespace Core::Engine {
         bool isRawMouseMotionSupported = glfwRawMouseMotionSupported();
         if (isRawMouseMotionSupported) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
-        glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            WindowCloseEvent event;
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
+        //     Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        //     WindowCloseEvent event;
+        //     instance->getEventCallback()(event);
+        // });
 
-        glfwSetWindowIconifyCallback(window, [](GLFWwindow* window, int32_t iconified) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            WindowMinimizeEvent event((bool) iconified);
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowIconifyCallback(window, [](GLFWwindow* window, int32_t iconified) {
+        //     Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        //     WindowMinimizeEvent event((bool) iconified);
+        //     instance->getEventCallback()(event);
+        // });
 
-        glfwSetWindowMaximizeCallback(window, [](GLFWwindow* window, int32_t maximized) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            WindowMaximizeEvent event((bool) maximized);
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowMaximizeCallback(window, [](GLFWwindow* window, int32_t maximized) {
+            // Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            // WindowMaximizeEvent event((bool) maximized);
+            // instance->getEventCallback()(event);
+        // });
 
-        glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int32_t width, int32_t height) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            instance->specs.width = width, instance->specs.height = height;
-            WindowResizeEvent event((uint32_t) width, (uint32_t) height);
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int32_t width, int32_t height) {
+        //     Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        //     instance->specs.width = width, instance->specs.height = height;
+        //     WindowResizeEvent event((uint32_t) width, (uint32_t) height);
+        //     instance->getEventCallback()(event);
+        // });
 
-        glfwSetWindowPosCallback(window, [](GLFWwindow* window, int32_t x, int32_t y) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            WindowMoveEvent event(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowPosCallback(window, [](GLFWwindow* window, int32_t x, int32_t y) {
+            // Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            // WindowMoveEvent event(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
+            // instance->getEventCallback()(event);
+        // });
 
-        glfwSetWindowFocusCallback(window, [](GLFWwindow* window, int32_t focused) {
-            Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
-            WindowFocusEvent event(static_cast<bool>(focused));
-            instance->getEventCallback()(event);
-        });
+        // glfwSetWindowFocusCallback(window, [](GLFWwindow* window, int32_t focused) {
+            // Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));
+            // WindowFocusEvent event(static_cast<bool>(focused));
+            // instance->getEventCallback()(event);
+        // });
 
         glfwSetKeyCallback(window, [](GLFWwindow* window, int32_t key, int32_t scancode, int32_t action, int32_t mods) {
             Window* instance = static_cast<Window*>(glfwGetWindowUserPointer(window));

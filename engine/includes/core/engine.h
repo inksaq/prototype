@@ -27,7 +27,7 @@ namespace Core::Engine {
             std::unique_ptr<Window> window;
         struct RenderResources {
             std::unique_ptr<Render::Shader> shader;
-            std::unique_ptr<Render::Buffer> quad;
+            std::shared_ptr<Render::VertexArray> quad;
             std::unique_ptr<Render::Texture> texture;
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
@@ -75,6 +75,7 @@ namespace Core::Engine {
             void Initialize();
             void Terminate();
             void Run();
+            bool started;
 
             void HandleEvent(Event& event);
 
@@ -86,6 +87,7 @@ namespace Core::Engine {
             // Transform controls
             void SetPosition(const glm::vec3& pos) { position = pos; }
             void SetScale(const glm::vec3& s) { scale = s; }
+
             void SetRotationSpeed(float speed) { rotationSpeed = speed; }
             void SetRotationAngle(float angle) { rotationAngle = angle; }
 

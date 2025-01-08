@@ -88,9 +88,24 @@ void Texture::setParameters(const TextureParameters& params) {
     glTexParameteri(target, GL_TEXTURE_WRAP_T, params.wrapT);
 }
 
-void Texture::bind(unsigned int unit) const {
+    void Texture::bind(unsigned int unit) const {
+    // Debug output before binding
+    GLint previousTexture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+    std::cout << "Previous texture binding: " << previousTexture << std::endl;
+
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(target, textureID);
+
+    // Verify texture parameters
+    GLint width, height, format;
+    glGetTexLevelParameteriv(target, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(target, 0, GL_TEXTURE_HEIGHT, &height);
+    glGetTexLevelParameteriv(target, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
+
+    std::cout << "Bound texture " << textureID << " to unit " << unit << std::endl;
+    std::cout << "Texture dimensions: " << width << "x" << height << std::endl;
+    std::cout << "Texture internal format: 0x" << std::hex << format << std::dec << std::endl;
 }
 
 void Texture::unbind() const {
