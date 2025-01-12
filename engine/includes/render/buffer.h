@@ -1,12 +1,13 @@
 #ifndef ENGINE_BUFFER_H
 #define ENGINE_BUFFER_H
 
+#include "vertex_array.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
 #include <memory>
 #include <initializer_list>
-#include "vertex_array.h"
 
 namespace Core::Render {
 
@@ -144,10 +145,12 @@ namespace Core::Render {
         uint32_t m_Count;
     };
 
-    class Buffer {
-    public:
-        static std::shared_ptr<VertexArray> createQuad();
-    };
+   class Buffer {
+public:
+    static std::shared_ptr<class VertexArray> createQuad();
+    // static std::shared_ptr<VertexBuffer> createVertexBuffer(float* vertices, uint32_t size);
+    // static std::shared_ptr<IndexBuffer> createIndexBuffer(uint32_t* indices, uint32_t count);
+};
 
 } // namespace Core::Render
 

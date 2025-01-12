@@ -15,6 +15,11 @@ host_system = host_machine.system()
 
 # Dependencies
 
+  # engine
+entt_dep = dependency('entt', required: true)
+assimp_dep = dependency('assimp', required: true)
+  # serialization
+nlohmann_json = dependency('nlohmann_json', required: true)
   # render
 glfw_dep = dependency('glfw3', required: true)
 gleq_dep = dependency('gleq', required: true)

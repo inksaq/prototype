@@ -298,9 +298,22 @@ namespace Core::Engine {
             updateTransforms();
 
             if (!isMinimized) {
-                OnUpdate(deltaTime);
-                render();
-                OnRender();
+                for (auto& layer : *layerStack) {
+                    if (layer->IsEnabled()) {
+                        layer->OnRender();
+                        layer->OnUpdate(deltaTime);
+                        render();
+                    }
+                }
+
+                imGuiLayer->Begin();
+                for (auto& layer : *layerStack) {
+                    if (layer->IsEnabled()) {
+                        layer->OnImGuiRender();
+                    }
+                }
+                imGuiLayer->End();
+
                 window->swapBuffers();
             }
 

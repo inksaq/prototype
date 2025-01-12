@@ -6,7 +6,9 @@
 // Optional: Create a Game class that inherits from Engine to handle game-specific logic
 class Game : public Core::Engine::Engine {
 public:
-    explicit Game(const Core::Engine::EngineSpecs& specs) : Engine(specs) {}
+    explicit Game(const Core::Engine::EngineSpecs& specs) : Engine(specs) {
+    }
+
 
     void OnInitialization() override {
         // Always call base class initialization first
@@ -58,6 +60,8 @@ int main() {
     // Create and run the game
     try {
         auto game = std::make_unique<Game>(specs);
+        game->PushLayer(std::make_shared<Core::Engine::Scene3DLayer>());
+        game->PushOverlay(std::make_shared<Core::Engine::ImGuiLayer>());
         game->Initialize();
         game->Run();
 

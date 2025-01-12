@@ -3,4 +3,4 @@
 #include "shader_manager.h"
 #include "render/render.hpp"
 #include "core/core.hpp"
-#include "shaders/default_shaders.hh"
+#include "shaders/shaders.hpp"

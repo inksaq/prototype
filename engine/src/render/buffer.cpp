@@ -14,15 +14,15 @@ namespace Core::Render {
         glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 
         // Debug verification
-        float* debugData = new float[size/sizeof(float)];
-        glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
-        std::cout << "Vertex Buffer Data Verification:" << std::endl;
-        for(size_t i = 0; i < size/sizeof(float); i++) {
-            std::cout << "Vertex[" << i << "]: " << debugData[i];
-            if(i % 5 == 4) std::cout << " (end of vertex)";  // Since each vertex has 5 components
-            std::cout << std::endl;
-        }
-        delete[] debugData;
+        // float* debugData = new float[size/sizeof(float)];
+        // glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
+        // std::cout << "Vertex Buffer Data Verification:" << std::endl;
+        // for(size_t i = 0; i < size/sizeof(float); i++) {
+        //     std::cout << "Vertex[" << i << "]: " << debugData[i];
+        //     if(i % 5 == 4) std::cout << " (end of vertex)";  // Since each vertex has 5 components
+        //     std::cout << std::endl;
+        // }
+        // delete[] debugData;
     }
 
     VertexBuffer::VertexBuffer(uint32_t size) {
@@ -169,5 +169,13 @@ namespace Core::Render {
 
         return vertexArray;
     }
+
+    // std::shared_ptr<VertexBuffer> Buffer::createVertexBuffer(float* vertices,uint32_t size) {
+    //     return std::make_shared<VertexBuffer>(vertices, size);
+    // }
+    //
+    // std::shared_ptr<IndexBuffer> Buffer::createIndexBuffer(uint32_t* indices, uint32_t count) {
+    //     return std::make_shared<IndexBuffer>(indices, count);
+    // }
 
 } // namespace Core::Render

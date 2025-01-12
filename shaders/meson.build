@@ -5,6 +5,7 @@ shader_pkg_lst = []
 
 # Define subdirectories containing shader packages
 subdir('default')
+subdir('grid')
 
 shader_headers = []
 

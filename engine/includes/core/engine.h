@@ -9,6 +9,9 @@
 #include "../render/buffer.h"
 #include <glm/glm.hpp>
 
+#include "layer/imgui_layer.h"
+#include "layer/layer_stack.h"
+
 namespace Core::Engine {
 
     struct EngineSpecs {
@@ -25,6 +28,8 @@ namespace Core::Engine {
 
         private:
             std::unique_ptr<Window> window;
+            std::unique_ptr<LayerStack> layerStack;
+            std::shared_ptr<ImGuiLayer> imGuiLayer;
         struct RenderResources {
             std::unique_ptr<Render::Shader> shader;
             std::shared_ptr<Render::VertexArray> quad;
@@ -78,6 +83,11 @@ namespace Core::Engine {
             bool started;
 
             void HandleEvent(Event& event);
+
+            //Layers
+        void PushLayer(std::shared_ptr<Layer> layer) { layerStack->PushLayer(layer); }
+        void PushOverlay(std::shared_ptr<Layer> overlay) { layerStack->PushOverlay(overlay); }
+        LayerStack& GetLayerStack() { return *layerStack; }
 
             // Getters and setters
             void SetTimeScale(float timeScale) { this->timeScale = timeScale; }

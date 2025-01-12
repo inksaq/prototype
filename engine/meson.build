@@ -3,7 +3,8 @@ subdir('src')
 
 
 dependencies = [
-    fmt_dep, 
+    fmt_dep,
+    assimp_dep,
     threads_dep, 
     gl_dep,
     glm_dep,
@@ -11,7 +12,10 @@ dependencies = [
     gleq_dep,
     glew_dep,
     imgui_dep,
-    stb_dep
+    stb_dep,
+    entt_dep,
+    nlohmann_json,
+    clay_dep
 ]
 
 lib_inc = include_directories('.','src','includes')
