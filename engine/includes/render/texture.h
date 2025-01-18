@@ -1,7 +1,7 @@
 #ifndef ENGINE_TEXTURE_H
 #define ENGINE_TEXTURE_H
 
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <string>
 #include <memory>
 

@@ -4,7 +4,7 @@
 
 #ifndef KEYCODES_H
 #define KEYCODES_H
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 
 
 namespace Core::Engine {

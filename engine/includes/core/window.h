@@ -9,9 +9,14 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
 #include <GLFW/glfw3native.h>
+#endif
+
 #include <filesystem>
 #include <string>
 #include <glm/glm.hpp>
@@ -91,15 +96,16 @@ namespace Core::Engine {
         EventCallbackFunc getEventCallback();
 
         void setVsync(bool enabled);
-        bool isVsync() ;
+        bool isVsync() const;
 
         // Native window handles
         inline GLFWwindow* getNativeWindow() const { return window; }
+        #ifdef _WIN32
         inline HWND getHWND() const { return glfwGetWin32Window(window); }
+        #endif
         inline float getTime() const { return static_cast<float>(glfwGetTime()); }
 
         static Window* create(const WindowSpecs& specs = WindowSpecs());
-
 
     };
 }

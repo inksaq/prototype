@@ -13,7 +13,9 @@
 namespace Core::Engine {
     struct Scene3DResources {
         std::unique_ptr<Render::Shader> gridShader;
-        std::unique_ptr<Render::Buffer> gridBuffer;
+        std::shared_ptr<Render::VertexBuffer> gridBuffer;
+        std::unique_ptr<Render::VertexArray> gridVAO;
+        size_t gridVertexCount = {0};
         glm::mat4 projection{1.0f};
         glm::mat4 view{1.0f};
         glm::vec3 position{0.0f};

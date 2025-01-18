@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <initializer_list>
+#include <sys/stat.h>
 
 namespace Core::Render {
 
@@ -96,6 +97,16 @@ namespace Core::Render {
         uint32_t m_Stride = 0;
     };
 
+    class Buffer {
+    public:
+        static std::shared_ptr<class VertexBuffer> createVertexBuffer(float* vertices, uint32_t size);
+        static std::shared_ptr<class VertexBuffer> createDynamicVertexBuffer(uint32_t size);
+        static std::shared_ptr<class IndexBuffer> createIndexBuffer(uint32_t* indices, uint32_t count);
+        static std::shared_ptr<class VertexArray> createQuad();
+
+        static void copyBufferData(uint32_t srcBuffer, uint32_t dstBuffer, uint32_t size);
+        static bool checkGLError(const char* operation);    };
+
     class VertexBuffer {
     public:
         VertexBuffer(float* vertices, uint32_t size);
@@ -117,8 +128,14 @@ namespace Core::Render {
         void setLayout(const BufferLayout& layout) { m_Layout = layout; }
         const BufferLayout& getLayout() const { return m_Layout; }
 
+        uint32_t getID() const { return m_RendererID; }
+        uint32_t getSize() const { return m_Size; }
+        bool isDynamic() const { return m_Dynamic; }
+
     private:
         uint32_t m_RendererID;
+        uint32_t m_Size;
+        bool m_Dynamic;
         BufferLayout m_Layout;
     };
 
@@ -139,18 +156,14 @@ namespace Core::Render {
         void unbind() const;
 
         uint32_t getCount() const { return m_Count; }
+        uint32_t getID() const { return m_RendererID; }
 
     private:
         uint32_t m_RendererID;
         uint32_t m_Count;
     };
 
-   class Buffer {
-public:
-    static std::shared_ptr<class VertexArray> createQuad();
-    // static std::shared_ptr<VertexBuffer> createVertexBuffer(float* vertices, uint32_t size);
-    // static std::shared_ptr<IndexBuffer> createIndexBuffer(uint32_t* indices, uint32_t count);
-};
+
 
 } // namespace Core::Render
 

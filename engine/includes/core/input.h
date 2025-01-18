@@ -3,7 +3,7 @@
 
 #include "keycodes.h"
 #include "event/event.h"
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 #include <sys/stat.h>
 
 

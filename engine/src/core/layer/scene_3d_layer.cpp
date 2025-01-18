@@ -91,11 +91,34 @@ namespace Core::Engine {
             gridVertices.push_back(0.0f);
             gridVertices.push_back(i);
         }
+        renderResources.gridVertexCount = gridVertices.size() / 3; // 3 components per vertex
+        // Create and configure vertex array
 
-        // Create buffer for grid
-        renderResources.gridBuffer = Render::Buffer::create();
-        renderResources.gridBuffer->setData(gridVertices.data(), gridVertices.size() * sizeof(float), 3);
+        try {
 
+            // Create vertex buffer
+            renderResources.gridBuffer = Core::Render::Buffer::createVertexBuffer(
+                gridVertices.data(),
+                static_cast<uint32_t>(gridVertices.size() * sizeof(float))
+            );
+
+            if (!renderResources.gridBuffer) {
+                std::cerr << "Failed to create vertex buffer" << std::endl;
+                return;
+            }
+
+            std::cout << "Created vertex buffer with " << renderResources.gridVertexCount << " vertices" << std::endl;
+
+            // Set buffer layout
+            Core::Render::BufferLayout layout = {
+                { Core::Render::ShaderDataType::Float3, "aPos" }
+            };
+            renderResources.gridBuffer->setLayout(layout);
+
+            // Add buffer to VAO
+            renderResources.gridVAO->bind();
+            renderResources.gridVAO->addVertexBuffer(renderResources.gridBuffer);
+            renderResources.gridVAO->unbind();
         // Initialize camera position and matrices
         renderResources.position = glm::vec3(0.0f, 5.0f, 10.0f);
         renderResources.scale = glm::vec3(1.0f);
@@ -103,6 +126,10 @@ namespace Core::Engine {
 
         initialized = true;
         std::cout << "Render resources initialization complete" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to initialize render resources: " << e.what() << std::endl;
+        return;
+    }
     }
 
     void Scene3DLayer::updateProjectionMatrix() {
@@ -157,15 +184,26 @@ namespace Core::Engine {
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        try {
 
         renderResources.gridShader->use();
         renderResources.gridShader->setMat4("projection", renderResources.projection);
         renderResources.gridShader->setMat4("view", renderResources.view);
         renderResources.gridShader->setMat4("model", glm::mat4(1.0f));
 
-        renderResources.gridBuffer->bind();
-        glDrawArrays(GL_LINES, 0, renderResources.gridBuffer->getVertexCount());
-        renderResources.gridBuffer->unbind();
+        renderResources.gridVAO->bind();
+    glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(renderResources.gridVertexCount));
+        renderResources.gridVAO->unbind();
+
+        // Check for errors
+        GLenum err;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error in OnRender: 0x" << std::hex << err << std::dec << std::endl;
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error during rendering: " << e.what() << std::endl;
+    }
     }
 
     void Scene3DLayer::OnImGuiRender() {
@@ -179,7 +217,13 @@ namespace Core::Engine {
     }
 
     void Scene3DLayer::OnDetach() {
-        renderResources.gridBuffer.reset();
-        renderResources.gridShader.reset();
+        try {
+            renderResources.gridBuffer.reset();
+            renderResources.gridVAO.reset();
+            renderResources.gridShader.reset();
+            initialized = false;
+        } catch (const std::exception& e) {
+            std::cerr << "Error during layer detachment: " << e.what() << std::endl;
+        }
     }
 }

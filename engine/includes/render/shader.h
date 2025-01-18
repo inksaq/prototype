@@ -2,7 +2,7 @@
 #define ENGINE_SHADER_H
 
 #include <span>
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>

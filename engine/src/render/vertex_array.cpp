@@ -40,8 +40,8 @@ namespace Core::Render {
     VertexArray::VertexArray(VertexArray&& other) noexcept
         : m_RendererID(other.m_RendererID),
           m_VertexBufferIndex(other.m_VertexBufferIndex),
-          m_IndexBuffer(std::move(other.m_IndexBuffer)
-          ) {
+          m_VertexBuffers(std::move(other.m_VertexBuffers)),
+          m_IndexBuffer(std::move(other.m_IndexBuffer)) {
         other.m_RendererID = 0;
         other.m_VertexBufferIndex = 0;
     }
@@ -53,7 +53,7 @@ namespace Core::Render {
             m_RendererID = other.m_RendererID;
             m_VertexBufferIndex = other.m_VertexBufferIndex;
             m_IndexBuffer = std::move(other.m_IndexBuffer);
-            m_VertexBuffer = std::move(other.m_VertexBuffer);
+            m_VertexBuffers = std::move(other.m_VertexBuffers);
 
             other.m_RendererID = 0;
             other.m_VertexBufferIndex = 0;
@@ -63,12 +63,12 @@ namespace Core::Render {
 
     void VertexArray::bind() const {
         glBindVertexArray(m_RendererID);
-        if (m_VertexBuffer) {
-            m_VertexBuffer->bind();  // Ensure VBO is bound
-        }
-        if (m_IndexBuffer) {
-            m_IndexBuffer->bind();   // Ensure IBO is bound
-        }
+        // if (m_VertexBuffer) {
+        //     m_VertexBuffer->bind();  // Ensure VBO is bound
+        // }
+        // if (m_IndexBuffer) {
+        //     m_IndexBuffer->bind();   // Ensure IBO is bound
+        // }
         // Debug vertex array state
         GLint vao;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
@@ -91,7 +91,6 @@ namespace Core::Render {
     }
 
     void VertexArray::addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) {
-        m_VertexBuffer = vertexBuffer;  // Store the vertex buffer
         glBindVertexArray(m_RendererID);
         vertexBuffer->bind();
 
@@ -165,12 +164,34 @@ namespace Core::Render {
                     std::cerr << "Unknown ShaderDataType!" << std::endl;
             }
         }
+        m_VertexBuffers.push_back(vertexBuffer);
+        Buffer::checkGLError("VertexArray::addVertexBuffer");
     }
 
     void VertexArray::setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) {
         glBindVertexArray(m_RendererID);
         indexBuffer->bind();
         m_IndexBuffer = indexBuffer;
+        Buffer::checkGLError("VertexArray::setIndexBuffer");
+    }
+
+    void VertexArray::draw() const {
+        if (m_VertexBuffers.empty()) return;
+
+        bind();
+        // Calculate total number of vertices from the buffer size and stride
+        const auto& layout = m_VertexBuffers[0]->getLayout();
+        uint32_t vertexCount = m_VertexBuffers[0]->getSize() / layout.getStride();
+        glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+        Buffer::checkGLError("VertexArray::draw");
+    }
+
+    void VertexArray::drawIndexed() const {
+        if (!m_IndexBuffer) return;
+
+        bind();
+        glDrawElements(GL_TRIANGLES, m_IndexBuffer->getCount(), GL_UNSIGNED_INT, nullptr);
+        Buffer::checkGLError("VertexArray::drawIndexed");
     }
 
 } // namespace Core::Render

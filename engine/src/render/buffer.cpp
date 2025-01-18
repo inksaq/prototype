@@ -4,31 +4,44 @@
 
 namespace Core::Render {
 
+
+
+    bool Buffer::checkGLError(const char* operation) {
+        GLenum err;
+        bool hasError = false;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            std::cerr << "OpenGL error after " << operation << ": 0x"
+                      << std::hex << err << std::dec << std::endl;
+            hasError = true;
+        }
+        return !hasError;
+    }
+
+    void Buffer::copyBufferData(uint32_t srcBuffer, uint32_t dstBuffer, uint32_t size) {
+        glBindBuffer(GL_COPY_READ_BUFFER, srcBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, dstBuffer);
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, size);
+        checkGLError("copyBufferData");
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // VertexBuffer /////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    VertexBuffer::VertexBuffer(float* vertices, uint32_t size) {
+    VertexBuffer::VertexBuffer(float* vertices, uint32_t size)
+        : m_Size(size), m_Dynamic(false) {
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
         glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
-
-        // Debug verification
-        // float* debugData = new float[size/sizeof(float)];
-        // glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
-        // std::cout << "Vertex Buffer Data Verification:" << std::endl;
-        // for(size_t i = 0; i < size/sizeof(float); i++) {
-        //     std::cout << "Vertex[" << i << "]: " << debugData[i];
-        //     if(i % 5 == 4) std::cout << " (end of vertex)";  // Since each vertex has 5 components
-        //     std::cout << std::endl;
-        // }
-        // delete[] debugData;
+        Buffer::checkGLError("VertexBuffer Constructor (Static)");
     }
 
-    VertexBuffer::VertexBuffer(uint32_t size) {
+    VertexBuffer::VertexBuffer(uint32_t size)
+        : m_Size(size), m_Dynamic(true) {
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
         glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+        Buffer::checkGLError("VertexBuffer Constructor (Dynamic)");
     }
 
     VertexBuffer::~VertexBuffer() {
@@ -36,16 +49,23 @@ namespace Core::Render {
     }
 
     VertexBuffer::VertexBuffer(VertexBuffer&& other) noexcept
-        : m_RendererID(other.m_RendererID), m_Layout(std::move(other.m_Layout)) {
+        : m_RendererID(other.m_RendererID),
+          m_Size(other.m_Size),
+          m_Dynamic(other.m_Dynamic),
+          m_Layout(std::move(other.m_Layout)) {
         other.m_RendererID = 0;
+        other.m_Size = 0;
     }
 
     VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept {
         if (this != &other) {
             glDeleteBuffers(1, &m_RendererID);
             m_RendererID = other.m_RendererID;
+            m_Size = other.m_Size;
+            m_Dynamic = other.m_Dynamic;
             m_Layout = std::move(other.m_Layout);
             other.m_RendererID = 0;
+            other.m_Size = 0;
         }
         return *this;
     }
@@ -59,15 +79,18 @@ namespace Core::Render {
     }
 
     void VertexBuffer::setData(const void* data, uint32_t size) {
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
-        // Add debug check
-        float* debugData = new float[size/sizeof(float)];
-        glGetBufferSubData(GL_ARRAY_BUFFER, 0, size, debugData);
-        for(size_t i = 0; i < size/sizeof(float); i++) {
-            std::cout << "Vertex data[" << i << "]: " << debugData[i] << std::endl;
+        if (size > m_Size && !m_Dynamic) {
+            std::cerr << "Warning: Attempting to upload more data than buffer size" << std::endl;
+            return;
         }
-        delete[] debugData;
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        if (size > m_Size && m_Dynamic) {
+            glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+            m_Size = size;
+        } else {
+            glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+        }
+        Buffer::checkGLError("VertexBuffer::setData");
     }
 
 
@@ -170,12 +193,17 @@ namespace Core::Render {
         return vertexArray;
     }
 
-    // std::shared_ptr<VertexBuffer> Buffer::createVertexBuffer(float* vertices,uint32_t size) {
-    //     return std::make_shared<VertexBuffer>(vertices, size);
-    // }
-    //
-    // std::shared_ptr<IndexBuffer> Buffer::createIndexBuffer(uint32_t* indices, uint32_t count) {
-    //     return std::make_shared<IndexBuffer>(indices, count);
-    // }
+    std::shared_ptr<VertexBuffer> Buffer::createVertexBuffer(float* vertices, uint32_t size) {
+        return std::make_shared<VertexBuffer>(vertices, size);
+    }
+
+    std::shared_ptr<VertexBuffer> Buffer::createDynamicVertexBuffer(uint32_t size) {
+        return std::make_shared<VertexBuffer>(size);
+    }
+
+    std::shared_ptr<IndexBuffer> Buffer::createIndexBuffer(uint32_t* indices, uint32_t count) {
+        return std::make_shared<IndexBuffer>(indices, count);
+    }
+
 
 } // namespace Core::Render
