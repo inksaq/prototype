@@ -8,6 +8,7 @@
 #include "../render/texture.h"
 #include "../render/buffer.h"
 #include <glm/glm.hpp>
+#include "../core/camera.h"
 
 #include "layer/imgui_layer.h"
 #include "layer/layer_stack.h"
@@ -28,6 +29,7 @@ namespace Core::Engine {
 
         private:
             std::unique_ptr<Window> window;
+            std::unique_ptr<Camera> camera;
             std::unique_ptr<LayerStack> layerStack;
             std::shared_ptr<ImGuiLayer> imGuiLayer;
         struct RenderResources {
@@ -36,6 +38,8 @@ namespace Core::Engine {
             std::unique_ptr<Render::Texture> texture;
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
+            glm::mat4 viewMatrix{1.0f};
+            float aspectRatio{1.0f};
         } renderResources;
 
         void initializeRenderResources();
@@ -88,6 +92,9 @@ namespace Core::Engine {
         void PushLayer(std::shared_ptr<Layer> layer) { layerStack->PushLayer(layer); }
         void PushOverlay(std::shared_ptr<Layer> overlay) { layerStack->PushOverlay(overlay); }
         LayerStack& GetLayerStack() { return *layerStack; }
+            // Get Camera
+            Camera& GetCamera() const { return *camera; }
+        void setGridProperties
 
             // Getters and setters
             void SetTimeScale(float timeScale) { this->timeScale = timeScale; }

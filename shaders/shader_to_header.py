@@ -41,8 +41,8 @@ def bin_to_header(opath, shader_dir, stub):
 
 
         f.write('\n')
-        f.write('static std::unordered_map<std::string, '
-                'std::vector<std::span<const unsigned char>>> ShadersPackage = {\n')
+        f.write(f'static const std::unordered_map<std::string, '
+                f'std::vector<std::span<const unsigned char>>> {stub}ShadersPackage = {{\n')
 
         for name in names:
             f.write('    { "' + name + '", { ')
@@ -52,8 +52,8 @@ def bin_to_header(opath, shader_dir, stub):
 
             f.write('}, },\n ')
 
-           
-       
+
+
         f.write('};\n')
 
 

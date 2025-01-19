@@ -91,13 +91,15 @@ void Shader::initialize(const char* vertexSource, const char* fragmentSource) {
 }
 
     void Shader::use() {
+    GLint currentProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    std::cout << "Shader::use - Current program before binding: " << currentProgram << std::endl;
+
     glUseProgram(ID);
 
-    // Verify uniform locations
-    GLint texLoc = glGetUniformLocation(ID, "texture1");
-    GLint useTexLoc = glGetUniformLocation(ID, "useTexture");
-    std::cout << "Texture uniform location: " << texLoc << std::endl;
-    std::cout << "UseTexture uniform location: " << useTexLoc << std::endl;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    std::cout << "Shader::use - Current program after binding: " << ID
+              << " (actual: " << currentProgram << ")" << std::endl;
 }
 
 void Shader::dispose() {
@@ -110,6 +112,7 @@ GLint Shader::getUniformLocation(const std::string& name) const {
         return it->second;
     }
     GLint location = glGetUniformLocation(ID, name.c_str());
+    std::cout << "Shader::getUniformLocation - " << name << " location: " << location << std::endl;
     uniformLocationCache[name] = location;
     return location;
 }

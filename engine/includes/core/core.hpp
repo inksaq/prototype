@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "engine.h"
 #include "window.h"
+#include "camera.h"
 #include "input.h"
 #include "keycodes.h"
 

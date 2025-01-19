@@ -1,6 +1,6 @@
 layer_sources = files(
   'layer.cpp',
-  'stack.cpp',
+  'layer_stack.cpp',
   'debug_layer.cpp',
   'imgui_layer.cpp',
   'grid.cpp',

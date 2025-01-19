@@ -20,11 +20,16 @@ namespace Core::Engine {
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-        // Setup style
+        // Setup ImGui style
         ImGui::StyleColorsDark();
+
+        // Customize style
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+        style.Colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
 
         // Setup Platform/Renderer bindings
         GLFWwindow* window = static_cast<GLFWwindow*>(Engine::Get().GetWindow().getNativeWindow());
@@ -60,16 +65,12 @@ namespace Core::Engine {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        if (io.ConfigFlags /*& ImGuiConfigFlags_ViewportsEnable*/) {
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            /*ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();*/
-            glfwMakeContextCurrent(backup_current_context);
-        }
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        glfwMakeContextCurrent(backup_current_context);
     }
 
     void ImGuiLayer::OnImGuiRender() {
         static bool show = true;
-        ImGui::ShowDemoWindow(&show);
+        // ImGui::ShowDemoWindow(&show);
     }
 }

@@ -35,6 +35,7 @@ namespace Core::Render {
         // Activate/Deactivate shader
         void use();
         void dispose();
+        GLint getUniformLocation(const std::string& name) const;
 
         // Utility uniform functions
         void setBool(const std::string& name, bool value) const;
@@ -63,7 +64,6 @@ namespace Core::Render {
                                       GLenum shaderType) const;
         GLuint linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID) const;
         void checkCompileErrors(GLuint shader, const std::string& type);
-        GLint getUniformLocation(const std::string& name) const;
         std::string readFile(const std::string& filePath);
     };
 

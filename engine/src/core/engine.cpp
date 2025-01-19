@@ -24,24 +24,41 @@ namespace Core::Engine {
 
     Engine::Engine(const EngineSpecs& specification) : specs(specification) {
         instance = this;
+        std::cout << "Engine constructor - Starting initialization..." << std::endl;
 
-        if (!specification.workingDirectory.empty())
-            std::filesystem::current_path(specification.workingDirectory);
-        window = std::unique_ptr<Window>(Window::create(createWindowSpecs()));
+        try {
+            // Initialize LayerStack
+            std::cout << "Engine constructor - Creating LayerStack..." << std::endl;
+            layerStack = std::make_unique<LayerStack>();
+            if (!layerStack) {
+                throw std::runtime_error("Failed to create LayerStack");
+            }
 
-        if (!window->init()) {
-            throw std::runtime_error("Failed to initialise window");
+            // Rest of the initialization...
+            if (!specification.workingDirectory.empty())
+                std::filesystem::current_path(specification.workingDirectory);
+
+            std::cout << "Engine constructor - Creating window..." << std::endl;
+            window = std::unique_ptr<Window>(Window::create(createWindowSpecs()));
+
+            if (!window->init()) {
+                throw std::runtime_error("Failed to initialise window");
+            }
+
+            // Initialize the event callback
+            window->setEventCallback([this](Event& event) { HandleEvent(event); });
+            window->initializeCallbacks();
+
+            if (specification.maximized)
+                window->maximise();
+
+            initializeGraphics();
+
+            std::cout << "Engine constructor - Initialization complete" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Engine constructor - Failed with error: " << e.what() << std::endl;
+            throw;
         }
-
-        // Initialize the event callback with a default empty function
-        window->setEventCallback([this](Event& event) { HandleEvent(event); });
-
-        window->initializeCallbacks();
-
-        if (specification.maximized)
-            window->maximise();
-
-        initializeGraphics();
     }
 
     Engine::~Engine() {
@@ -70,7 +87,7 @@ namespace Core::Engine {
             try {
                 renderResources.shader = std::make_unique<Render::Shader>(
                     default_vert_shader, default_frag_shader);
-                std::cout << "Shader created successfully" << std::endl;
+                std::cout << "Default Shader created successfully" << std::endl;
             } catch (const std::exception& e) {
                 std::cerr << "Failed to create shader: " << e.what() << std::endl;
                 return;
@@ -195,93 +212,47 @@ namespace Core::Engine {
         }
     }
 
-   void Engine::render() {
-    if (!specs.renderer || !renderResources.shader || !renderResources.quad) {
-        return;
-    }
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-    renderResources.shader->use();
-
-    // Set up view matrix for 2D rendering
-    renderResources.view = glm::mat4(1.0f);
-
-    // Create model matrix
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, position);
-    model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
-    model = glm::rotate(model, glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
-    model = glm::scale(model, scale);
-
-        std::cout << "\nMatrix States:" << std::endl;
-        std::cout << "Model Matrix:" << std::endl;
-        for(int i = 0; i < 4; i++) {
-            for(int j = 0; j < 4; j++) {
-                std::cout << model[i][j] << " ";
-            }
-            std::cout << std::endl;
+    void Engine::render() {
+        if (!specs.renderer || !renderResources.shader || !renderResources.quad) {
+            return;
         }
 
-    // Set uniforms
-    renderResources.shader->setMat4("projection", renderResources.projection);
-    renderResources.shader->setMat4("view", renderResources.view);
-    renderResources.shader->setMat4("model", model);
+        // Disable depth testing for 2D rendering
+        glDisable(GL_DEPTH_TEST);
 
-    if (renderResources.texture) {
-        // Add debug output for texture state
-        GLint boundTexture;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
-        std::cout << "Before binding - Current bound texture: " << boundTexture << std::endl;
+        renderResources.shader->use();
 
-        glActiveTexture(GL_TEXTURE0);
-        renderResources.texture->bind(0);
+        // Set up view matrix for 2D rendering
+        renderResources.view = glm::mat4(1.0f);
 
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
-        std::cout << "After binding - Current bound texture: " << boundTexture << std::endl;
+        // Create model matrix
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
+        model = glm::rotate(model, glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
+        model = glm::scale(model, scale);
 
-        renderResources.shader->setInt("texture1", 0);
-        renderResources.shader->setInt("useTexture", 1);
+        // Set uniforms
+        renderResources.shader->setMat4("projection", renderResources.projection);
+        renderResources.shader->setMat4("view", renderResources.view);
+        renderResources.shader->setMat4("model", model);
+
+        if (renderResources.texture) {
+            glActiveTexture(GL_TEXTURE0);
+            renderResources.texture->bind(0);
+            renderResources.shader->setInt("texture1", 0);
+            renderResources.shader->setInt("useTexture", 1);
+        }
+
+        renderResources.quad->bind();
+        glDrawElements(GL_TRIANGLES, renderResources.quad->getIndexBuffer()->getCount(), GL_UNSIGNED_INT, nullptr);
+        renderResources.quad->unbind();
+
+        if (renderResources.texture) {
+            renderResources.texture->unbind();
+        }
     }
-
-    // Draw the quad with debug info
-    renderResources.quad->bind();
-
-        GLint vao, vbo, ebo;
-        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &ebo);
-
-        std::cout << "Buffer State:" << std::endl;
-        std::cout << "Bound VAO: " << vao << std::endl;
-        std::cout << "Bound VBO: " << vbo << std::endl;
-        std::cout << "Bound EBO: " << ebo << std::endl;
-
-    // Debug output before draw
-    GLint indexCount = renderResources.quad->getIndexBuffer()->getCount();
-    std::cout << "Drawing with index count: " << indexCount << std::endl;
-
-    // Verify index buffer binding
-    GLint boundElementBuffer;
-    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &boundElementBuffer);
-    std::cout << "Bound element buffer: " << boundElementBuffer << std::endl;
-
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
-
-    // Check for GL errors after draw
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        std::cout << "OpenGL error after draw: 0x" << std::hex << err << std::dec << std::endl;
-    }
-
-    renderResources.quad->unbind();
-
-    if (renderResources.texture) {
-        renderResources.texture->unbind();
-    }
-}
 
     void Engine::Initialize() {
         OnInitialization();
@@ -298,21 +269,22 @@ namespace Core::Engine {
             updateTransforms();
 
             if (!isMinimized) {
+                // Clear once at the start of frame
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+                // 3D Layers render first
                 for (auto& layer : *layerStack) {
                     if (layer->IsEnabled()) {
-                        layer->OnRender();
                         layer->OnUpdate(deltaTime);
-                        render();
+                        layer->OnRender();
                     }
                 }
 
-                imGuiLayer->Begin();
-                for (auto& layer : *layerStack) {
-                    if (layer->IsEnabled()) {
-                        layer->OnImGuiRender();
-                    }
-                }
-                imGuiLayer->End();
+                // // 2D rendering (engine sprite) last
+                // if (specs.renderer) {
+                //     render();
+                // }
 
                 window->swapBuffers();
             }
@@ -351,4 +323,5 @@ namespace Core::Engine {
 
         OnEvent(event);
     }
+
 }
